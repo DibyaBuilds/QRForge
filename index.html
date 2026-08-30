@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRForge – Offline QR Generator & Scanner</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- PWA: installable app -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- Local libraries (no CDN at runtime) -->
+    <script src="libs/qrcode.min.js"></script>
+    <script src="libs/jsQR.js"></script>
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- Header -->
+    <header class="glass-header">
+        <div class="logo-area">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><path d="M3 14h7v7H3z"></path></svg>
+            <div>
+                <h1>QRForge</h1>
+                <span class="subtitle">Create QR codes instantly. Private. Fast. Offline.</span>
+            </div>
+        </div>
+        <div class="header-controls">
+            <span class="offline-badge"><span class="off-dot"></span><span class="off-text">OFFLINE</span></span>
+            <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Navigation (desktop) -->
+    <nav class="main-nav glass-card" aria-label="Main navigation">
+        <button class="nav-tab active" data-view="generator">⚡ Generate QR</button>
+        <button class="nav-tab" data-view="scanner">📷 Scan QR</button>
+        <button class="nav-tab" data-view="batch">📦 Batch QR</button>
+    </nav>
+
+    <!-- ============ GENERATOR VIEW ============ -->
+    <section id="generator-view" class="view-container">
+        <main class="main-container">
+            <!-- LEFT PANEL -->
+            <section class="panel left-panel glass-card">
+                <h2>QR Configuration</h2>
+
+                <div class="qr-types" role="tablist" aria-label="QR Code Types">
+                    <button class="type-tab active" data-type="text" role="tab" aria-selected="true"><span class="tab-icon">📝</span>Text</button>
+                    <button class="type-tab" data-type="url" role="tab" aria-selected="false"><span class="tab-icon">🔗</span>URL</button>
+                    <button class="type-tab" data-type="wifi" role="tab" aria-selected="false"><span class="tab-icon">📶</span>Wi-Fi</button>
+                    <button class="type-tab" data-type="phone" role="tab" aria-selected="false"><span class="tab-icon">📞</span>Phone</button>
+                    <button class="type-tab" data-type="email" role="tab" aria-selected="false"><span class="tab-icon">✉️</span>Email</button>
+                    <button class="type-tab" data-type="sms" role="tab" aria-selected="false"><span class="tab-icon">💬</span>SMS</button>
+                    <button class="type-tab" data-type="contact" role="tab" aria-selected="false"><span class="tab-icon">👤</span>Contact</button>
+                    <button class="type-tab" data-type="location" role="tab" aria-selected="false"><span class="tab-icon">📍</span>Location</button>
+                </div>
+
+                <form id="qr-form" class="input-form" novalidate></form>
+
+                <div class="customization-section">
+                    <h3>Customization</h3>
+
+                    <div class="acc-section open" id="acc-appearance">
+                        <button type="button" class="acc-header" aria-expanded="true">🎨 Appearance</button>
+                        <div class="acc-body">
+                            <div class="custom-grid">
+                                <div class="form-group">
+                                    <label for="fg-color">Foreground</label>
+                                    <div class="color-row">
+                                        <input type="color" id="fg-color" value="#000000">
+                                        <span class="color-hex" id="fg-hex">#000000</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bg-color">Background</label>
+                                    <div class="color-row">
+                                        <input type="color" id="bg-color" value="#ffffff">
+                                        <span class="color-hex" id="bg-hex">#FFFFFF</span>
+                                    </div>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="grad-toggle">
+                                    <label for="grad-toggle">🌈 Use gradient colors</label>
+                                </div>
+                                <div class="form-group hidden" id="grad-colors">
+                                    <label>Gradient Start → End</label>
+                                    <div class="logo-controls">
+                                        <input type="color" id="grad-start" value="#2563eb">
+                                        <span class="color-hex" id="grad-start-hex">#2563EB</span>
+                                        <input type="color" id="grad-end" value="#7c3aed">
+                                        <span class="color-hex" id="grad-end-hex">#7C3AED</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dot-style">Dot Style</label>
+                                    <select id="dot-style">
+                                        <option value="square">Classic Squares</option>
+                                        <option value="rounded">Rounded Blocks</option>
+                                        <option value="dots">Dots</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="eye-style">Corner Eyes</label>
+                                    <select id="eye-style">
+                                        <option value="square">Square</option>
+                                        <option value="rounded">Rounded</option>
+                                        <option value="circle">Circle</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="acc-section" id="acc-advanced">
+                        <button type="button" class="acc-header" aria-expanded="false">⚙️ Advanced</button>
+                        <div class="acc-body">
+                            <div class="custom-grid">
+                                <div class="form-group">
+                                    <label for="qr-size">Size: <span id="size-label">300</span>px</label>
+                                    <input type="range" id="qr-size" min="200" max="600" step="100" value="300">
+                                </div>
+                                <div class="form-group">
+                                    <label for="error-correction">Error Correction</label>
+                                    <select id="error-correction">
+                                        <option value="L">L – Low (7%)</option>
+                                        <option value="M" selected>M – Medium (15%)</option>
+                                        <option value="Q">Q – Quartile (25%)</option>
+                                        <option value="H">H – High (30%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="acc-section" id="acc-logo">
+                        <button type="button" class="acc-header" aria-expanded="false">🖼️ Logo</button>
+                        <div class="acc-body">
+                            <div class="logo-controls">
+                                <button type="button" id="upload-logo-btn" class="action-btn">🖼️ Upload Logo</button>
+                                <button type="button" id="remove-logo-btn" class="action-btn danger hidden">❌ Remove</button>
+                                <img id="logo-preview" class="logo-preview hidden" alt="Logo preview">
+                            </div>
+                            <input type="file" id="logo-input" accept="image/png, image/jpeg, image/webp, image/svg+xml" class="hidden">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="generate-btn" class="primary-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 12z"></path><path d="M21 3v9h-9"></path></svg>
+                    GENERATE QR
+                </button>
+                <button type="button" id="open-batch-btn" class="batch-link">📦 Need many codes? Try Batch Generate</button>
+            </section>
+
+            <!-- RIGHT PANEL -->
+            <section class="panel right-panel glass-card">
+                <h2>QR Preview</h2>
+
+                <div id="qr-preview-container" class="preview-area">
+                    <div id="empty-state" class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><path d="M14 14h3v3h-3zM14 18h3v3h-3zM18 14h3v3h-3zM18 18h3v3h-3z"></path></svg>
+                        <p>Your QR code will appear here</p>
+                        <span>Choose a QR type and enter your information.</span>
+                    </div>
+                    <div id="qr-canvas" class="hidden"></div>
+                </div>
+
+                <div id="qr-info" class="qr-info hidden">
+                    <span class="info-badge" id="info-type">Text</span>
+                    <span class="info-badge">Size: <span id="info-size">300x300</span></span>
+                    <span class="info-badge success">Generated Offline</span>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="download-png-btn" class="action-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        PNG
+                    </button>
+                    <button id="download-svg-btn" class="action-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        SVG
+                    </button>
+                    <button id="copy-image-btn" class="action-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        Copy Img
+                    </button>
+                    <button id="copy-data-btn" class="action-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        Copy Data
+                    </button>
+                    <button id="favorite-btn" class="action-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        Favorite
+                    </button>
+                    <button id="download-pdf-btn" class="action-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg>
+                        PDF
+                    </button>
+                    <button id="more-actions-btn" class="action-btn more-btn">⋯ More</button>
+                    <button id="reset-btn" class="action-btn danger">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        Reset
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Section: History & Favorites -->
+        <section class="bottom-section main-container">
+            <div class="glass-card history-card">
+                <div class="card-header">
+                    <h3>Recent History</h3>
+                    <button id="clear-history-btn" class="text-btn">Clear All</button>
+                </div>
+                <ul id="history-list" class="list-container">
+                    <li class="empty-list">No history yet.</li>
+                </ul>
+            </div>
+
+            <div class="glass-card favorites-card">
+                <div class="card-header">
+                    <h3>⭐ Favorites</h3>
+                </div>
+                <ul id="favorites-list" class="list-container">
+                    <li class="empty-list">No favorites yet.</li>
+                </ul>
+            </div>
+        </section>
+    </section>
+
+    <!-- ============ SCANNER VIEW ============ -->
+    <section id="scanner-view" class="view-container hidden">
+        <main class="main-container scanner-layout">
+            <div class="panel glass-card">
+                <h2>Scan QR Code</h2>
+                <div class="scanner-tabs">
+                    <button class="scanner-tab active" data-mode="camera">Camera Scanner</button>
+                    <button class="scanner-tab" data-mode="upload">Upload Image</button>
+                </div>
+
+                <div id="camera-mode" class="scanner-mode">
+                    <div class="video-container">
+                        <video id="scanner-video" autoplay playsinline muted></video>
+                        <div class="scan-overlay">
+                            <div class="scan-frame"></div>
+                            <div class="scan-line"></div>
+                        </div>
+                        <div id="camera-status" class="camera-status">Click "Start Camera" to begin</div>
+                    </div>
+                    <div class="camera-controls">
+                        <select id="camera-select" class="hidden" aria-label="Select camera"></select>
+                        <button id="start-camera-btn" class="primary-btn">START CAMERA</button>
+                        <button id="stop-camera-btn" class="action-btn danger hidden">STOP CAMERA</button>
+                    </div>
+                </div>
+
+                <div id="upload-mode" class="scanner-mode hidden">
+                    <div id="drop-zone" class="drop-zone">
+                        <p>Drop a QR code image here</p>
+                        <button id="choose-image-btn" class="action-btn">Choose Image</button>
+                        <input type="file" id="image-input" accept="image/png, image/jpeg, image/webp" class="hidden">
+                    </div>
+                    <img id="upload-preview" class="hidden" alt="Uploaded QR preview">
+                </div>
+
+                <canvas id="scanner-canvas" class="hidden"></canvas>
+            </div>
+
+            <div class="panel glass-card">
+                <h2>Scan Result</h2>
+                <div id="scan-result-empty" class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10" rx="1"></rect></svg>
+                    <p>Scan a QR code to see the results here.</p>
+                </div>
+                <div id="scan-result-card" class="hidden">
+                    <div class="result-info">
+                        <span class="info-badge" id="result-type">Text</span>
+                        <span class="info-badge success">Detected Offline</span>
+                    </div>
+                    <div class="result-content" id="result-content"></div>
+                    <div class="action-buttons" id="result-actions"></div>
+                    <button id="scan-again-btn" class="primary-btn">SCAN AGAIN</button>
+                </div>
+            </div>
+        </main>
+    </section>
+
+    <!-- ============ BATCH VIEW ============ -->
+    <section id="batch-view" class="view-container hidden">
+        <main class="main-container">
+            <div class="panel glass-card">
+                <h2>Batch Generation</h2>
+                <div class="form-group">
+                    <label for="batch-input">One item per line</label>
+                    <textarea id="batch-input" placeholder="https://example.com&#10;Hello World&#10;My product label"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="batch-type">Treat lines as</label>
+                    <select id="batch-type">
+                        <option value="auto">Auto (add https:// to links)</option>
+                        <option value="text">Plain text</option>
+                    </select>
+                </div>
+                <p class="hint">Batch codes use black & white + quiet zone for perfect printing. Max 50 per batch.</p>
+                <button id="batch-generate-btn" class="primary-btn">📦 GENERATE BATCH</button>
+            </div>
+
+            <div class="panel glass-card">
+                <div class="card-header">
+                    <h2>Batch Preview</h2>
+                    <button id="batch-print-btn" class="action-btn hidden">🖨️ Print / Save PDF</button>
+                </div>
+                <div id="batch-grid" class="batch-grid">
+                    <div class="empty-state"><p>Your batch QR codes will appear here.</p></div>
+                </div>
+            </div>
+        </main>
+    </section>
+
+    <!-- Footer -->
+    <footer class="glass-footer">
+        <p>🔒 100% local processing. Your QR data never leaves your device.</p>
+        <p>QRForge — Offline QR Code Generator</p>
+    </footer>
+
+    <!-- Mobile bottom navigation -->
+    <nav id="bottom-nav" class="bottom-nav" aria-label="Mobile navigation">
+        <button class="bnav-item active" data-tab="create">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            <span>Create</span>
+        </button>
+        <button class="bnav-item" data-tab="scan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+            <span>Scan</span>
+        </button>
+        <button class="bnav-item" data-tab="history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+            <span>History</span>
+        </button>
+        <button class="bnav-item" data-tab="favorites">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span>Favorites</span>
+        </button>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+</html>
